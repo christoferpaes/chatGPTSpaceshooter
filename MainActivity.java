@@ -147,150 +147,82 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Function to handle player shooting
-    private void playerShoot() {
-        Projectile projectile = new Projectile(playerSpaceship.getX(), playerSpaceship.getY());
-        playerSpaceship.getProjectiles().add(projectile);
-    }
-
-    // Function to check collisions between player spaceship and enemies
-    private void checkCollisions() {
-        // Check collision between player spaceship and each enemy
-        for (EnemySpaceship enemy : enemySpaceships) {
-            if (playerSpaceship.collidesWith(enemy)) {
-                // Collision occurred, handle game over or decrease player health, etc.
-                gameOver();
-                return;
-            }
-        }
-
-        // Check collision between player projectiles and enemies
-        Iterator<Projectile> iterator = playerSpaceship.getProjectiles().iterator();
-        while (iterator.hasNext()) {
-            Projectile projectile = iterator.next();
-            for (EnemySpaceship enemy : enemySpaceships) {
-                if (projectile.collidesWith(enemy)) {
-                    // Collision occurred, remove enemy and projectile, and increase score
-                    enemySpaceships.remove(enemy);
-                    iterator.remove();
-                    increaseScore();
-                    break;
-                }
-            }
+    // Check for collision between player spaceship and enemies
+  private void checkCollisions() {
+    // Iterate over enemy spaceships
+    Iterator<EnemySpaceship> iterator = enemySpaceships.iterator();
+    while (iterator.hasNext()) {
+        EnemySpaceship enemy = iterator.next();
+        
+        // Check collision between player and enemy spaceship
+        if (RectF.intersects(playerSpaceship.getRect(), enemy.getRect())) {
+            // Collision occurred, remove enemy spaceship
+            iterator.remove();
+            // TODO: Perform actions for player-enemy collision, e.g., decrease player health
         }
     }
+}
+   // Handle player shooting mechanics
+private void playerShoot() {
+    // Create a new bullet object at player spaceship position
+    Bullet bullet = new Bullet(playerSpaceship.getX(), playerSpaceship.getY());
+    // TODO: Add the bullet object to a list or perform other shooting logic
+}
 
-    // Function to increase the score
-    private void increaseScore() {
-        score += 10; // Increase the score by a certain amount
-        // Update the score display on the screen
-        // ...
-    }
+// Update the score
+private void updateScore() {
+    // Increase the score by a certain amount based on game events (e.g., destroying enemy spaceships)
+    score += 10; // Increase the score by 10 for each enemy spaceship destroyed
 
-    // Function to update the game screen
-    private void updateGameScreen() {
-        // TODO: Update the game screen with the current positions of player spaceship, enemies, and projectiles
-        // ...
-    }
-
-    // Function to handle game over
-    private void gameOver() {
-        gameRunning = false;
-        // TODO: Handle game over logic, such as showing a game over message, saving the high score, etc.
-        // ...
-    }
-
-    // Inner class representing the enemy spaceship
-    private class EnemySpaceship {
-        private int x;
-        private int y;
-
-        public EnemySpaceship(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public void update() {
-            // TODO: Update the enemy spaceship's position
-            // ...
-        }
-    }
+    // TODO: Perform any additional score-related actions or updates
+    // For example, you can update the score display on the screen or trigger events based on score thresholds.
+}
 
     // Inner class representing the player spaceship
     private class PlayerSpaceship {
-        private int x;
-        private int y;
-        private List<Projectile> projectiles;
+        private float x, y;
+        private float speed;
 
         public PlayerSpaceship() {
-            this.x = SCREEN_WIDTH / 2;
-            this.y = SCREEN_HEIGHT - 100; // Adjust the initial position as needed
-            this.projectiles = new ArrayList<>();
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public List<Projectile> getProjectiles() {
-            return projectiles;
+            // Initialize player spaceship properties
+            x = SCREEN_WIDTH / 2;
+            y = SCREEN_HEIGHT - 200;
+            speed = 10;
         }
 
         public void update() {
-            // TODO: Update the player spaceship's position
-            // ...
-        }
-
-        public boolean collidesWith(EnemySpaceship enemy) {
-            // TODO: Implement collision detection logic between player spaceship and enemy spaceship
-            // ...
-            return false;
+            // Update player spaceship position based on input or AI
+            // TODO: Implement player spaceship movement logic
         }
     }
 
-    // Inner class representing the projectiles fired by the player spaceship
-    private class Projectile {
-        private int x;
-        private int y;
+    // Inner class representing an enemy spaceship
+    private class EnemySpaceship {
+        private float x, y;
+        private float speed;
 
-        public Projectile(int x, int y) {
+        public EnemySpaceship(float x, float y) {
+            // Initialize enemy spaceship properties
             this.x = x;
             this.y = y;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public int getY() {
-            return y;
+            speed = 5;
         }
 
         public void update() {
-            // TODO: Update the projectile's position
-            // ...
+            // Update enemy spaceship position based on AI or predetermined patterns
+            // TODO: Implement enemy spaceship movement logic
         }
 
-        public boolean collidesWith(EnemySpaceship enemy) {
-            // TODO: Implement collision detection logic between projectile and enemy spaceship
-            // ...
-            return false;
+        public float getX() {
+            return x;
+        }
+
+        public float getY() {
+            return y;
         }
     }
 
-    // Game view to handle drawing and rendering of game objects
+    // Inner class representing the game view
     private class GameView extends SurfaceView implements SurfaceHolder.Callback {
         private SurfaceHolder holder;
         private Paint paint;
@@ -311,41 +243,20 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            // Handle surface changes, if needed
+            // Handle changes to the surface (if any)
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            // Stop the game loop and perform cleanup when the surface is destroyed
+            // Stop the game loop when the surface is destroyed
             gameRunning = false;
-            // Perform any necessary cleanup here
         }
 
         public void update() {
-            Canvas canvas = holder.lockCanvas();
-            if (canvas != null) {
-                // Clear the canvas
-                canvas.drawColor(Color.BLACK);
-
-                // Draw player spaceship
-                canvas.drawCircle(playerSpaceship.getX(), playerSpaceship.getY(), 20, paint);
-
-                // Draw enemy spaceships
-                for (EnemySpaceship enemy : enemySpaceships) {
-                    canvas.drawCircle(enemy.getX(), enemy.getY(), 20, paint);
-                }
-
-                // Draw projectiles
-                for (Projectile projectile : playerSpaceship.getProjectiles()) {
-                    canvas.drawCircle(projectile.getX(), projectile.getY(), 10, paint);
-                }
-
-                // TODO: Draw other game objects as needed
-
-                // Draw score
-                paint.setTextSize(30);
-                canvas.drawText("Score: " + score, 10, 50, paint);
-
+            // Update the game view (draw game objects, etc.)
+            if (holder.getSurface().isValid()) {
+                Canvas canvas = holder.lockCanvas();
+                // TODO: Draw game objects on the canvas
                 holder.unlockCanvasAndPost(canvas);
             }
         }
