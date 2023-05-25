@@ -170,6 +170,27 @@ private void initializeEnemySpaceships() {
         }
     }
 }
+private void loadHighScores() {
+    // Retrieve the high scores from SharedPreferences
+    SharedPreferences sharedPreferences = getSharedPreferences("HighScores", MODE_PRIVATE);
+    Set<String> highScoresSet = sharedPreferences.getStringSet("scores", new HashSet<>());
+
+    // Convert the Set to a List for easier manipulation
+    List<String> highScoresList = new ArrayList<>(highScoresSet);
+
+    // Convert the high score strings to objects
+    List<T> parsedHighScoresList = new ArrayList<>();
+    for (String highScoreString : highScoresList) {
+        T parsedHighScore = parseScoreFromString(highScoreString);
+        parsedHighScoresList.add(parsedHighScore);
+    }
+
+    // Sort the high scores if needed
+    // ...
+
+    // Assign the parsed high scores list to the member variable
+    this.highScoresList = parsedHighScoresList;
+}
    // Handle player shooting mechanics
 private void playerShoot() {
     // Create a new bullet object at player spaceship position
