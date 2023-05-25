@@ -1,30 +1,41 @@
-import android.content.Intent;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
-
+// TitleActivity.java
 public class TitleActivity extends AppCompatActivity {
 
-    private Button startButton;
+    private Button btnStartGame;
+    private Button btnHighScores;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_title);
 
-        startButton = findViewById(R.id.start_button);
-        startButton.setOnClickListener(new View.OnClickListener() {
+        btnStartGame = findViewById(R.id.btnStartGame);
+        btnHighScores = findViewById(R.id.btnHighScores);
+
+        btnStartGame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startGame();
             }
         });
+
+        btnHighScores.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showHighScores();
+            }
+        });
     }
 
     private void startGame() {
+        // Start the game
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
-        finish();
+    }
+
+    private void showHighScores() {
+        // Show the high scores activity
+        Intent intent = new Intent(this, HighScoresActivity.class);
+        startActivity(intent);
     }
 }
