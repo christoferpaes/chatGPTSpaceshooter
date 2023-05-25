@@ -219,18 +219,25 @@ private void gameOver() {
     builder.create().show();
 }
 
-// Function to save the high score
-private void saveHighScore(int score) {
+private void saveHighScore(T highScore) {
     // Retrieve the high scores from SharedPreferences
     SharedPreferences sharedPreferences = getSharedPreferences("HighScores", MODE_PRIVATE);
     Set<String> highScoresSet = sharedPreferences.getStringSet("scores", new HashSet<>());
 
-    // Add the current score to the set
-    highScoresSet.add(String.valueOf(score));
+    // Convert the Set to a List for easier manipulation
+    List<String> highScoresList = new ArrayList<>(highScoresSet);
 
-    // Save the updated high scores to SharedPreferences
+    // Convert the high score object to a string representation
+    String highScoreString = getScoreAsString(highScore);
+
+    // Add the high score string to the list
+    highScoresList.add(highScoreString);
+
+    // Save the updated high scores list to SharedPreferences
+    highScoresSet = new HashSet<>(highScoresList);
     sharedPreferences.edit().putStringSet("scores", highScoresSet).apply();
 }
+
 
 // Function to show the high scores activity
 private void showHighScores() {
