@@ -82,17 +82,37 @@ public class MainActivity extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
-    // Function to start the game
     private void startGame() {
-        gameRunning = true;
-        score = 0;
-        playerSpaceship = new PlayerSpaceship();
-        enemySpaceships = new ArrayList<>();
-        // TODO: Initialize enemy spaceships and other game objects.
-
-        // Start the game loop
-        gameLoop();
+    if (gameRunning) {
+        // Game is already running
+        return;
     }
+
+    gameRunning = true;
+    score = 0;
+    playerSpaceship = new PlayerSpaceship();
+    enemySpaceships = new ArrayList<>();
+
+    // Initialize enemy spaceships and other game objects
+    initializeEnemySpaceships();
+
+    // Initialize game view
+    gameView = new GameView(this);
+    setContentView(gameView);
+
+    // Start the game loop
+    gameLoop();
+}
+
+private void initializeEnemySpaceships() {
+    // Create and add enemy spaceships to the list
+    // Adjust the coordinates and other parameters as needed
+    enemySpaceships.add(new EnemySpaceship(100, 100));
+    enemySpaceships.add(new EnemySpaceship(200, 200));
+    enemySpaceships.add(new EnemySpaceship(300, 300));
+    // Add more enemy spaceships as desired
+}
+
 
     // Game loop for updating game state
     private void gameLoop() {
