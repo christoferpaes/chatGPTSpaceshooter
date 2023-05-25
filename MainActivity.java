@@ -185,6 +185,58 @@ private void updateScore() {
     // TODO: Perform any additional score-related actions or updates
     // For example, you can update the score display on the screen or trigger events based on score thresholds.
 }
+    
+// Function to handle game over
+private void gameOver() {
+    gameRunning = false;
+
+    // Display a dialog to ask the user if they want to save their high score
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle("Game Over");
+    builder.setMessage("Your score: " + score + "\nDo you want to save your high score?");
+
+    // Add Save button
+    builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            // Save the high score
+            saveHighScore(score);
+            // Show the high scores activity
+            showHighScores();
+        }
+    });
+
+    // Add Cancel button
+    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            // Show the high scores activity
+            showHighScores();
+        }
+    });
+
+    // Create and show the dialog
+    builder.create().show();
+}
+
+// Function to save the high score
+private void saveHighScore(int score) {
+    // Retrieve the high scores from SharedPreferences
+    SharedPreferences sharedPreferences = getSharedPreferences("HighScores", MODE_PRIVATE);
+    Set<String> highScoresSet = sharedPreferences.getStringSet("scores", new HashSet<>());
+
+    // Add the current score to the set
+    highScoresSet.add(String.valueOf(score));
+
+    // Save the updated high scores to SharedPreferences
+    sharedPreferences.edit().putStringSet("scores", highScoresSet).apply();
+}
+
+// Function to show the high scores activity
+private void showHighScores() {
+    Intent intent = new Intent(this, HighScoresActivity.class);
+    startActivity(intent);
+}
 
     // Inner class representing the player spaceship
     private class PlayerSpaceship {
