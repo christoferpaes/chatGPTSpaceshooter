@@ -1,8 +1,9 @@
 // HighScoresActivity.java
-public class HighScoresActivity extends AppCompatActivity {
+public class HighScoresActivity<T> extends AppCompatActivity {
 
     private ListView listViewHighScores;
-    private List<String> highScoresList;
+    private List<T> highScoresList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
