@@ -1,49 +1,61 @@
+package com.example.releaseofspaceshooter;
+
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.Bundle;
-
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.example.spaceshooter.databinding.ActivityMainBinding;
-
-import android.view.Menu;
-import android.view.MenuItem;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import com.example.releaseofspaceshooter.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final float SCREEN_HEIGHT = 10000;
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
     // Game variables
     private boolean gameRunning;
     private int score;
+    private float startX;
+    public float startY;
 
     // Player spaceship
     private PlayerSpaceship playerSpaceship;
 
     // Enemy objects
-    private List<EnemySpaceship> enemySpaceships;
+    private LinkedList<EnemySpaceship> enemySpaceships;
 
     // Game view
     private GameView gameView;
+    private Thread gameThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-  super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // Initialize the game view
@@ -75,48 +87,116 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        return NavigationUI.navigateUp(navController, appBarConfiguration)
-                || super.onSupportNavigateUp();
-    }
+
 
     private void startGame() {
-    if (gameRunning) {
-        // Game is already running
-        return;
+        if (gameRunning) {
+            // Game is already running
+            return;
+        }
+
+
+        gameRunning = true;
+        score = 0;
+        playerSpaceship = new PlayerSpaceship(startX,startY);
+        enemySpaceships = new LinkedList<>();
+
+        // Initialize enemy spaceships and other game objects
+        initializeEnemySpaceships();
+
+        // Initialize game view
+        gameView = new GameView(this);
+        setContentView(gameView);
+
+        // Start the game loop
+        gameThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                gameLoop();
+            }
+        });
+        gameThread.start();
     }
 
-    gameRunning = true;
-    score = 0;
-    playerSpaceship = new PlayerSpaceship();
-    enemySpaceships = new ArrayList<>();
+    private void initializeEnemySpaceships() {
+        // Create and add enemy spaceships to the list
+        // Adjust the coordinates and other parameters as needed
+        enemySpaceships.add(new EnemySpaceship(100, 100));
+        enemySpaceships.add(new EnemySpaceship(200, 200));
+        enemySpaceships.add(new EnemySpaceship(300, 300));
+        // Add more enemy spaceships as desired
+    }
+    private void checkCollisions() {
+        RectF playerHitbox = playerSpaceship.getHitbox();
 
-    // Initialize enemy spaceships and other game objects
-    initializeEnemySpaceships();
+        // Check collision between player spaceship and enemy spaceships
+        for (EnemySpaceship enemy : enemySpaceships) {
+            RectF enemyHitbox = enemy.getHitbox();
 
-    // Initialize game view
-    gameView = new GameView(this);
-    setContentView(gameView);
+            if (RectF.intersects(playerHitbox, enemyHitbox)) {
+                // Collision detected
+                // Add your collision handling logic here
+            }
+        }
+    }
 
-    // Start the game loop
-    gameLoop();
-}
+    private void playerShoot() {
+        // Create a new bullet object based on the player's position
+        Bullet bullet = new Bullet(playerSpaceship.getX(), playerSpaceship.getY());
 
-private void initializeEnemySpaceships() {
-    // Create and add enemy spaceships to the list
-    // Adjust the coordinates and other parameters as needed
-    enemySpaceships.add(new EnemySpaceship(100, 100));
-    enemySpaceships.add(new EnemySpaceship(200, 200));
-    enemySpaceships.add(new EnemySpaceship(300, 300));
-    // Add more enemy spaceships as desired
-}
+        // Add the bullet to your game's bullet list or perform any other actions
+        // related to player shooting
+        // Add your player shooting logic here
+    }
+    private void updateScore() {
+        int pointsPerEnemy = 10; // Define the number of points earned per destroyed enemy
+
+        // Count the number of enemy spaceships destroyed
+        int destroyedEnemies = 0;
+        for (EnemySpaceship enemy : enemySpaceships) {
+            if (enemy.isDestroyed()) {
+                destroyedEnemies++;
+            }
+        }
+
+        // Update the score based on the number of destroyed enemies
+        int scoreIncrease = destroyedEnemies * pointsPerEnemy;
+        score += scoreIncrease;
+    }
 
 
     // Game loop for updating game state
     private void gameLoop() {
+        long startTime = System.currentTimeMillis();
+        long previousTime = startTime;
+        long frameTime;
+
+        // Flag to track if the player is shooting
+        final boolean[] isPlayerShooting = {false};
+
+        // Listener for the shoot button press/release
+        gameView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int action = event.getAction();
+
+                if (action == MotionEvent.ACTION_DOWN) {
+                    // Player pressed the shoot button
+                     isPlayerShooting[0] = true;
+                } else if (action == MotionEvent.ACTION_UP) {
+                    // Player released the shoot button
+                    isPlayerShooting[0] = false;
+                }
+
+                return true;
+            }
+        });
+
         while (gameRunning) {
+            long currentTime = System.currentTimeMillis();
+            frameTime = currentTime - previousTime;
+            previousTime = currentTime;
+
             // Update player spaceship position
             playerSpaceship.update();
 
@@ -124,10 +204,10 @@ private void initializeEnemySpaceships() {
             Iterator<EnemySpaceship> iterator = enemySpaceships.iterator();
             while (iterator.hasNext()) {
                 EnemySpaceship enemy = iterator.next();
-                enemy.update();
+                enemy.update(frameTime);
 
                 // Check if enemy spaceship is off the screen and remove it
-                if (enemy.getY() > SCREEN_HEIGHT) {
+                if (enemy.getRect().top > SCREEN_HEIGHT) {
                     iterator.remove();
                 }
             }
@@ -135,8 +215,8 @@ private void initializeEnemySpaceships() {
             // Check for collision between player spaceship and enemies
             checkCollisions();
 
-            // TODO: Handle shooting mechanics
-            if (/* check if player wants to shoot */) {
+            // Handle shooting mechanics
+            if (isPlayerShooting[0]) {
                 playerShoot();
             }
 
@@ -155,198 +235,86 @@ private void initializeEnemySpaceships() {
         }
     }
 
-    // Check for collision between player spaceship and enemies
-  private void checkCollisions() {
-    // Iterate over enemy spaceships
-    Iterator<EnemySpaceship> iterator = enemySpaceships.iterator();
-    while (iterator.hasNext()) {
-        EnemySpaceship enemy = iterator.next();
-        
-        // Check collision between player and enemy spaceship
-        if (RectF.intersects(playerSpaceship.getRect(), enemy.getRect())) {
-            // Collision occurred, remove enemy spaceship
-            iterator.remove();
-            // TODO: Perform actions for player-enemy collision, e.g., decrease player health
+    private void drawGameObjects(Canvas canvas) {
+        // Clear the canvas
+        canvas.drawColor(Color.BLACK);
+
+        // Draw player spaceship
+        playerSpaceship.draw(canvas);
+
+        // Draw enemy spaceships
+        for (EnemySpaceship enemySpaceship : enemySpaceships) {
+            enemySpaceship.draw(canvas);
         }
-    }
-}
-private void loadHighScores() {
-    // Retrieve the high scores from SharedPreferences
-    SharedPreferences sharedPreferences = getSharedPreferences("HighScores", MODE_PRIVATE);
-    Set<String> highScoresSet = sharedPreferences.getStringSet("scores", new HashSet<>());
 
-    // Convert the Set to a List for easier manipulation
-    List<String> highScoresList = new ArrayList<>(highScoresSet);
-
-    // Convert the high score strings to objects
-    List<T> parsedHighScoresList = new ArrayList<>();
-    for (String highScoreString : highScoresList) {
-        T parsedHighScore = parseScoreFromString(highScoreString);
-        parsedHighScoresList.add(parsedHighScore);
+        // Draw score
+        Paint scorePaint = new Paint();
+        scorePaint.setColor(Color.WHITE);
+        scorePaint.setTextSize(48);
+        canvas.drawText("Score: " + score, 20, 60, scorePaint);
     }
 
-    // Sort the high scores if needed
-    // ...
-
-    // Assign the parsed high scores list to the member variable
-    this.highScoresList = parsedHighScoresList;
-}
-   // Handle player shooting mechanics
-private void playerShoot() {
-    // Create a new bullet object at player spaceship position
-    Bullet bullet = new Bullet(playerSpaceship.getX(), playerSpaceship.getY());
-    // TODO: Add the bullet object to a list or perform other shooting logic
-}
-
-// Update the score
-private void updateScore() {
-    // Increase the score by a certain amount based on game events (e.g., destroying enemy spaceships)
-    score += 10; // Increase the score by 10 for each enemy spaceship destroyed
-
-    // TODO: Perform any additional score-related actions or updates
-    // For example, you can update the score display on the screen or trigger events based on score thresholds.
-}
-    
-// Function to handle game over
-private void gameOver() {
-    gameRunning = false;
-
-    // Display a dialog to ask the user if they want to save their high score
-    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setTitle("Game Over");
-    builder.setMessage("Your score: " + score + "\nDo you want to save your high score?");
-
-    // Add Save button
-    builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            // Save the high score
-            saveHighScore(score);
-            // Show the high scores activity
-            showHighScores();
-        }
-    });
-
-    // Add Cancel button
-    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            // Show the high scores activity
-            showHighScores();
-        }
-    });
-
-    // Create and show the dialog
-    builder.create().show();
-}
-
-private void saveHighScore(T highScore) {
-    // Retrieve the high scores from SharedPreferences
-    SharedPreferences sharedPreferences = getSharedPreferences("HighScores", MODE_PRIVATE);
-    Set<String> highScoresSet = sharedPreferences.getStringSet("scores", new HashSet<>());
-
-    // Convert the Set to a List for easier manipulation
-    List<String> highScoresList = new ArrayList<>(highScoresSet);
-
-    // Convert the high score object to a string representation
-    String highScoreString = getScoreAsString(highScore);
-
-    // Add the high score string to the list
-    highScoresList.add(highScoreString);
-
-    // Save the updated high scores list to SharedPreferences
-    highScoresSet = new HashSet<>(highScoresList);
-    sharedPreferences.edit().putStringSet("scores", highScoresSet).apply();
-}
-
-
-// Function to show the high scores activity
-private void showHighScores() {
-    Intent intent = new Intent(this, HighScoresActivity.class);
-    startActivity(intent);
-}
-
-    // Inner class representing the player spaceship
-    private class PlayerSpaceship {
-        private float x, y;
-        private float speed;
-
-        public PlayerSpaceship() {
-            // Initialize player spaceship properties
-            x = SCREEN_WIDTH / 2;
-            y = SCREEN_HEIGHT - 200;
-            speed = 10;
-        }
-
-        public void update() {
-            // Update player spaceship position based on input or AI
-            // TODO: Implement player spaceship movement logic
-        }
+    private void showGameOverDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Game Over");
+        builder.setMessage("Your score: " + score);
+        builder.setPositiveButton("Restart", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startGame();
+            }
+        });
+        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        builder.setCancelable(false);
+        builder.show();
     }
 
-    // Inner class representing an enemy spaceship
-    private class EnemySpaceship {
-        private float x, y;
-        private float speed;
-
-        public EnemySpaceship(float x, float y) {
-            // Initialize enemy spaceship properties
-            this.x = x;
-            this.y = y;
-            speed = 5;
-        }
-
-        public void update() {
-            // Update enemy spaceship position based on AI or predetermined patterns
-            // TODO: Implement enemy spaceship movement logic
-        }
-
-        public float getX() {
-            return x;
-        }
-
-        public float getY() {
-            return y;
-        }
-    }
-
-    // Inner class representing the game view
+    // GameView class for displaying the game
     private class GameView extends SurfaceView implements SurfaceHolder.Callback {
         private SurfaceHolder holder;
-        private Paint paint;
 
-        public GameView(Context context) {
+        public GameView(MainActivity context) {
             super(context);
             holder = getHolder();
             holder.addCallback(this);
-            paint = new Paint();
-            paint.setColor(Color.WHITE);
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            // Start the game loop when the surface is created
-            gameLoop();
+            // Start the game when the surface is created
+            startGame();
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            // Handle changes to the surface (if any)
+            // Handle surface changes if needed
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            // Stop the game loop when the surface is destroyed
             gameRunning = false;
+
+            // Stop the game loop thread
+            try {
+                gameThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            // Additional cleanup code if applicable
         }
 
         public void update() {
-            // Update the game view (draw game objects, etc.)
-            if (holder.getSurface().isValid()) {
-                Canvas canvas = holder.lockCanvas();
-                // TODO: Draw game objects on the canvas
+            Canvas canvas = holder.lockCanvas();
+            if (canvas != null) {
+                drawGameObjects(canvas);
                 holder.unlockCanvasAndPost(canvas);
             }
+
         }
-    }
-}
+    }}
